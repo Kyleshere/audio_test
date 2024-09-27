@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Recording Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .question {
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        audio {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Audio Recording Test</h1>
+
+    <!-- Question 1 -->
+    <div class="question">
+        <p>Question 1: Tell me 4 sentences about you.</p>
+        <button id="recordBtn1" onclick="startRecording(1)">Start Recording (30s)</button>
+        <audio id="audioPlayback1" controls></audio>
+    </div>
+
+    <!-- Question 2 -->
+    <div class="question">
+        <p>Question 2: Tell in 4 sentences about your favorite trip.</p>
+        <button id="recordBtn2" onclick="startRecording(2)">Start Recording (30s)</button>
+        <audio id="audioPlayback2" controls></audio>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let currentQuestion = 0;
+
+        async function startRecording(questionNumber) {
+            currentQuestion = questionNumber;
+            recordedChunks = [];
+            const recordButton = document.getElementById(`recordBtn${questionNumber}`);
+            recordButton.disabled = true;
+
+            try {
+                // Request access to the microphone
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                // Create a MediaRecorder instance
+                mediaRecorder = new MediaRecorder(stream);
+
+                // Capture data chunks when recording
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                // When the recording stops, save and display the audio
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    document.getElementById(`audioPlayback${currentQuestion}`).src = audioUrl;
+                    recordButton.disabled = false;
+                };
+
+                // Start recording
+                mediaRecorder.start();
+
+                // Stop recording after 30 seconds
+                setTimeout(() => {
+                    if (mediaRecorder.state !== 'inactive') {
+                        mediaRecorder.stop();
+                    }
+                }, 30000);
+
+            } catch (error) {
+                alert('Error accessing microphone: ' + error.message);
+                recordButton.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
